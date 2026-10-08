@@ -6,20 +6,19 @@ namespace VRCGuiter.VirtualMic;
 public static class EndpointRenamer
 {
     private static readonly Guid DeviceFmtid = new("a45c254e-df1c-4efd-8020-67d146a850e0");
-    private const int PidDeviceDesc = 2;      // PKEY_Device_DeviceDesc（サウンド設定で変えられる名前）
-    private const int PidFriendlyName = 14;   // PKEY_Device_FriendlyName（アプリに見える完全な名前）
+    private const int PidDeviceDesc = 2;      // PKEY_Device_DeviceDesc。完全名「{名前} (アダプタ名)」は Windows がこれから組み立てる
     private const int StgmReadWrite = 2;
     private const ushort VtLpwstr = 31;
 
-    public static void Rename(string endpointId, string shortName, string fullName)
+    public static void Rename(string endpointId, string shortName)
     {
-        var enumerator = (IMMDeviceEnumerator)new MMDeviceEnumeratorComObject();
+        // NAudio 内部の同 GUID の COM クラスと型が衝突するので、CLSID から直接生成する
+        var enumerator = (IMMDeviceEnumerator)Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("BCDE0395-E52F-467C-8E3D-C4579291692E"), true)!)!;
         Check(enumerator.GetDevice(endpointId, out IMMDevice device));
         Check(device.OpenPropertyStore(StgmReadWrite, out IPropertyStore store));
         try
         {
             SetString(store, new PropertyKey { fmtid = DeviceFmtid, pid = PidDeviceDesc }, shortName);
-            SetString(store, new PropertyKey { fmtid = DeviceFmtid, pid = PidFriendlyName }, fullName);
             Check(store.Commit());
         }
         finally
@@ -38,9 +37,6 @@ public static class EndpointRenamer
     }
 
     private static void Check(int hr) { if (hr < 0) Marshal.ThrowExceptionForHR(hr); }
-
-    [ComImport, Guid("BCDE0395-E52F-467C-8E3D-C4579291692E")]
-    private class MMDeviceEnumeratorComObject { }
 
     [ComImport, Guid("A95664D2-9614-4F35-A746-DE8DB63617E6"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface IMMDeviceEnumerator

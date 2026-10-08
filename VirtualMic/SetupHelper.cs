@@ -61,12 +61,12 @@ public static class SetupHelper
         {
             try
             {
-                EndpointRenamer.Rename(cable.Capture.Id, VirtualCable.VrcgName, VirtualCable.VrcgName + " (" + VirtualCable.VbAdapterName + ")");
+                EndpointRenamer.Rename(cable.Capture.Id, VirtualCable.VrcgName);
                 log.AppendLine("改名: " + cable.Capture.Name + " -> " + VirtualCable.VrcgName);
             }
             catch (Exception ex)
             {
-                log.AppendLine("改名失敗: " + ex.Message);
+                log.AppendLine("改名失敗: " + ex);
                 return 4;
             }
         }
