@@ -1,11 +1,9 @@
 namespace VRCGuiter.Audio.Dsp;
 
-/// <summary>2次 IIR フィルタ（ハイパスに使用）。</summary>
 public sealed class Biquad
 {
     private float _b0, _b1, _b2, _a1, _a2, _z1, _z2;
 
-    /// <summary>RBJ cookbook のバターワースハイパス。</summary>
     public static Biquad HighPass(double sampleRate, double cutoffHz, double q = 0.7071)
     {
         var bq = new Biquad();

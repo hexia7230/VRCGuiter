@@ -10,7 +10,6 @@ public static class SampleConverter
         wf.Encoding == WaveFormatEncoding.IeeeFloat ||
         (wf is WaveFormatExtensible ex && ex.SubFormat == FloatSubtype);
 
-    /// <summary>任意の PCM/float バッファをモノラル float に変換（全チャンネル平均）。戻り値 = フレーム数。</summary>
     public static int ToMono(byte[] buf, int bytes, WaveFormat wf, ref float[] dst)
     {
         int ch = wf.Channels, bps = wf.BitsPerSample / 8;

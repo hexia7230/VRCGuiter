@@ -2,14 +2,11 @@ using NAudio.CoreAudioApi;
 
 namespace VRCGuiter.VirtualMic;
 
-/// <summary>エンドポイントの情報を一度だけ読んだもの（プロパティ読み出しは重いので使い回す）。</summary>
 public sealed record EndpointInfo(MMDevice Device, string Id, string Name, string Adapter);
 
-/// <summary>再生側に書くと録音側から出てくる仮想ケーブルのペア。</summary>
 public sealed record CablePair(string Kind, string Label, EndpointInfo Render, EndpointInfo Capture, int Priority)
 {
     public bool IsVbCable => Kind == "vbcable";
-    /// <summary>VRChat 側で選ぶマイク名</summary>
     public string MicName => Capture.Name;
 }
 
@@ -49,7 +46,6 @@ public static class VirtualCable
         if (vbr != null && vbc != null)
             list.Add(new CablePair("vbcable", "VRCG（VB-CABLE）", vbr, vbc, 0));
 
-        // 同じアダプタ名で再生 1 つ・録音 1 つを持つ仮想デバイスも候補にする
         foreach (var adapter in renders.Select(r => r.Adapter).Distinct())
         {
             if (adapter == VbAdapterName || adapter.Length == 0) continue;

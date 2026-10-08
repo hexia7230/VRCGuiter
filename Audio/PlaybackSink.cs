@@ -4,7 +4,6 @@ using NAudio.Wave;
 
 namespace VRCGuiter.Audio;
 
-/// <summary>モノラル float を受け取り、指定の再生デバイスへ流す（必要ならリサンプリング）。</summary>
 public sealed class PlaybackSink : IDisposable
 {
     private readonly WasapiOut _out;
@@ -42,7 +41,6 @@ public sealed class PlaybackSink : IDisposable
             _rs.SetFeedMode(true);
             _rs.SetRates(inputRate, SampleRate);
         }
-        // 最初のアンダーランを避けるための無音
         int pre = SampleRate * 40 / 1000;
         var silence = new byte[pre * _channels * 4];
         _bwp.AddSamples(silence, 0, silence.Length);
@@ -55,7 +53,6 @@ public sealed class PlaybackSink : IDisposable
     public void Write(float[] mono, int n)
     {
         if (_disposed || n <= 0) return;
-        // 入出力のクロックずれでバッファが溜まり続けた場合はこのブロックを捨てる
         if (BufferedMs > 250) return;
 
         float[] src = mono; int cnt = n;

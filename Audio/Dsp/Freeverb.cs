@@ -1,6 +1,5 @@
 namespace VRCGuiter.Audio.Dsp;
 
-/// <summary>Freeverb（Schroeder/Moorer）のモノラル版 + プリディレイ。</summary>
 public sealed class Freeverb
 {
     private static readonly int[] CombTunings = { 1116, 1188, 1277, 1356, 1422, 1491, 1557, 1617 };
@@ -15,11 +14,8 @@ public sealed class Freeverb
     private int _preIdx;
     private int _sampleRate = 48000;
 
-    /// <summary>0..1 原音に混ぜる量</summary>
     public volatile float Wet = 0.3f;
-    /// <summary>0..1 部屋の広さ（残響の長さ）</summary>
     public volatile float Room = 0.55f;
-    /// <summary>0..1 高域の減衰（大きいほど暗い）</summary>
     public volatile float Damp = 0.5f;
     public volatile float PreDelayMs = 20f;
 
@@ -52,7 +48,7 @@ public sealed class Freeverb
 
             _pre[_preIdx] = input;
             int rd = _preIdx - preSamples; if (rd < 0) rd += _pre.Length;
-            float din = _pre[rd] * 0.015f + 1e-18f; // 1e-18f は非正規化数対策
+            float din = _pre[rd] * 0.015f + 1e-18f;
             if (++_preIdx >= _pre.Length) _preIdx = 0;
 
             float sum = 0f;

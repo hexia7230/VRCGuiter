@@ -72,8 +72,6 @@ public sealed class MainForm : Form
         BuildUi();
     }
 
-    // ---------------------------------------------------------------- UI 構築
-
     private void BuildUi()
     {
         Heading("仮想マイク");
@@ -192,8 +190,6 @@ public sealed class MainForm : Form
         cmb.Margin = new Padding(0, 3, 0, 0);
     }
 
-    // ---------------------------------------------------------------- 起動と終了
-
     protected override void OnLoad(EventArgs e)
     {
         base.OnLoad(e);
@@ -241,8 +237,6 @@ public sealed class MainForm : Form
         base.OnFormClosing(e);
     }
 
-    // ---------------------------------------------------------------- デバイス
-
     private DeviceItem? SelectedInput() => _cmbInput.SelectedItem as DeviceItem;
     private DeviceItem? SelectedOutput() => _cmbOutput.SelectedItem as DeviceItem;
     private DeviceItem? SelectedMonitor() => _cmbMonitor.SelectedItem as DeviceItem;
@@ -258,7 +252,6 @@ public sealed class MainForm : Form
             var cableCaptureIds = _cables.Select(c => c.Capture.Id).ToHashSet();
             var cableRenderIds = _cables.Select(c => c.Render.Id).ToHashSet();
 
-            // 入力: 仮想ケーブルの録音側は除外（ループ防止）。既定は仮想っぽくない物理マイク
             var inputs = captures.Where(d => !cableCaptureIds.Contains(d.Id))
                 .Select(d => new DeviceItem { Id = d.Id, Name = d.Name, Device = d.Device }).ToList();
             string? defIn = DefaultId(DataFlow.Capture, Role.Communications);
@@ -332,8 +325,6 @@ public sealed class MainForm : Form
             _btnSetup.Text = "VRCG 作成";
         }
     }
-
-    // ---------------------------------------------------------------- エンジン
 
     private void TryStart(bool interactive)
     {
@@ -433,8 +424,6 @@ public sealed class MainForm : Form
         }
     }
 
-    // ---------------------------------------------------------------- セットアップ
-
     private async void RunSetup()
     {
         if (_setupRunning) return;
@@ -474,8 +463,6 @@ public sealed class MainForm : Form
         }
     }
 
-    // ---------------------------------------------------------------- 雑多
-
     private void UpdateMeters()
     {
         SetMeter(_pbIn, _engine.ReadInputPeak());
@@ -490,7 +477,6 @@ public sealed class MainForm : Form
             double db = 20 * Math.Log10(peak);
             v = (int)Math.Clamp((db + 60) / 60 * 100, 0, 100);
         }
-        // Windows のプログレスバーは増加時にアニメーションして遅れるので、一度上に振ってから戻す
         if (v < 100) { pb.Value = v + 1; pb.Value = v; }
         else pb.Value = 100;
     }

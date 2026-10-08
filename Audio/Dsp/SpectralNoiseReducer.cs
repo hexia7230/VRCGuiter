@@ -2,11 +2,6 @@ using NAudio.Dsp;
 
 namespace VRCGuiter.Audio.Dsp;
 
-/// <summary>
-/// 学習したノイズのスペクトル（空調・ヒス等の定常音）だけを減らすノイズ除去。
-/// Decision-directed Wiener ゲイン方式で、楽器音・歌声の成分は残す。
-/// 遅延 = FftSize サンプル（48kHz で約 21ms）。
-/// </summary>
 public sealed class SpectralNoiseReducer
 {
     public const int FftSize = 1024;
@@ -33,20 +28,17 @@ public sealed class SpectralNoiseReducer
     private float[]? _learnSum;
     private int _learnFrames, _learnTarget;
 
-    /// <summary>0..1（0 でバイパス）</summary>
     public volatile float Strength = 0.6f;
 
     public bool Learning => _learnSum != null;
     public bool HasProfile => _profile != null;
 
-    /// <summary>学習完了時にオーディオスレッドから呼ばれる。</summary>
     public event Action<float[]>? LearnCompleted;
 
     public SpectralNoiseReducer()
     {
         for (int i = 0; i < FftSize; i++)
             _window[i] = (float)Math.Sqrt(0.5 * (1 - Math.Cos(2 * Math.PI * i / FftSize)));
-        // 分析窓x合成窓を Hop ずらしで足した合計（定数になる）
         double norm = 0;
         for (int k = 0; k < FftSize / Hop; k++) norm += _window[k * Hop] * _window[k * Hop];
         _olaNorm = (float)norm;
@@ -57,7 +49,7 @@ public sealed class SpectralNoiseReducer
     {
         Array.Clear(_frame); Array.Clear(_ola); Array.Clear(_hopBuf);
         _hopCount = 0; _outHead = _outTail = _outCount = 0;
-        for (int i = 0; i < Hop; i++) Push(0f); // 出力数 = 入力数 を保証する初期詰め物
+        for (int i = 0; i < Hop; i++) Push(0f);
         Array.Fill(_prevGain, 1f); Array.Fill(_prevPost, 1f);
         _learnSum = null;
     }
@@ -77,7 +69,6 @@ public sealed class SpectralNoiseReducer
         _learnSum = new float[Bins];
     }
 
-    /// <summary>in-place。n サンプル入れると n サンプル出る。</summary>
     public void Process(float[] buf, int n)
     {
         for (int i = 0; i < n; i++)
@@ -114,7 +105,7 @@ public sealed class SpectralNoiseReducer
             float s = Strength;
             if (profile != null && s > 0.001f)
             {
-                float floorG = (float)Math.Pow(10, -2.0 * s);   // 強さ 1.0 で -40dB
+                float floorG = (float)Math.Pow(10, -2.0 * s);
                 float overSub = 1f + s;
                 for (int k = 0; k < Bins; k++)
                 {

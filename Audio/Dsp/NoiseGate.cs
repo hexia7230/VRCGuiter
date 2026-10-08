@@ -1,9 +1,7 @@
 namespace VRCGuiter.Audio.Dsp;
 
-/// <summary>演奏していない間の残りノイズを閉じる、ゆるいゲート。</summary>
 public sealed class NoiseGate
 {
-    /// <summary>dBFS。-100 以下でオフ。</summary>
     public volatile float ThresholdDb = -60f;
 
     private float _env, _gain = 1f, _envDecay, _attack, _release;

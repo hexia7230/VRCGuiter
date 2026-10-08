@@ -7,10 +7,6 @@ namespace VRCGuiter.VirtualMic;
 
 public sealed record SetupResult(bool Ok, string Message);
 
-/// <summary>
-/// VB-CABLE（vb-audio.com、無料のドナーウェア）を公式サイトから取得して導入し、
-/// 録音側エンドポイントを「VRCG」に改名する。通常権限で動く側。
-/// </summary>
 public static class VbCableSetup
 {
     public const string ZipUrl = "https://download.vb-audio.com/Download_CABLE/VBCABLE_Driver_Pack45.zip";

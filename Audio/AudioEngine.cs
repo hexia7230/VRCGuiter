@@ -4,7 +4,6 @@ using VRCGuiter.Audio.Dsp;
 
 namespace VRCGuiter.Audio;
 
-/// <summary>マイク → ハイパス → ノイズ除去 → ゲート → リバーブ → 音量 → リミッター → 仮想ケーブル（+モニター）</summary>
 public sealed class AudioEngine : IDisposable
 {
     private readonly object _lock = new();
@@ -20,7 +19,6 @@ public sealed class AudioEngine : IDisposable
     public Freeverb Reverb { get; } = new();
     public PeakLimiter Limiter { get; } = new();
 
-    /// <summary>リニア倍率</summary>
     public volatile float OutputGain = 1f;
 
     public int SampleRate { get; private set; }
@@ -28,13 +26,10 @@ public sealed class AudioEngine : IDisposable
     public bool Running => _capture != null;
     public int LatencyMsEstimate => 20 + SpectralNoiseReducer.FftSize * 1000 / Math.Max(1, SampleRate) + 30;
 
-    /// <summary>入力/出力ピーク（0..1）。読み出すとリセット。</summary>
     public float ReadInputPeak() { float v = _inPeak; _inPeak = 0; return v; }
     public float ReadOutputPeak() { float v = _outPeak; _outPeak = 0; return v; }
 
-    /// <summary>デバイスエラー等で停止したとき（例外は null の場合あり）。</summary>
     public event Action<Exception?>? Stopped;
-    /// <summary>ノイズ学習完了（オーディオスレッドから）</summary>
     public event Action<float[]>? NoiseLearned;
 
     public AudioEngine()
@@ -45,7 +40,6 @@ public sealed class AudioEngine : IDisposable
     public void Start(MMDevice input, MMDevice output, bool exclusive, MMDevice? monitor)
     {
         Stop();
-        // 排他モードはデバイスによって開けないことがあるので、失敗したら共有モードで開き直す
         Exception? lastError = null;
         foreach (bool tryExclusive in exclusive ? new[] { true, false } : new[] { false })
         {
@@ -109,7 +103,6 @@ public sealed class AudioEngine : IDisposable
         isExclusive = false;
         if (exclusive)
         {
-            // 排他モード: Windows の音声処理（ノイズ抑制・AGC 等）を迂回する
             var candidates = new List<WaveFormat>();
             foreach (int rate in new[] { 48000, 44100, 96000 })
                 foreach (int ch in new[] { 1, 2 })
@@ -125,17 +118,14 @@ public sealed class AudioEngine : IDisposable
                 try { using var ac = input.AudioClient; ok = ac.IsFormatSupported(AudioClientShareMode.Exclusive, fmt); }
                 catch { ok = false; }
                 if (!ok) continue;
-                // 排他はイベント駆動だとバッファ境界の制約が厳しいのでポーリングで開く
                 var c = new RawWasapiCapture(input, false, 20) { ShareMode = AudioClientShareMode.Exclusive, WaveFormat = fmt };
                 isExclusive = true;
                 return c;
             }
-            // 対応フォーマットが無ければ共有モードにフォールバック
         }
         return new RawWasapiCapture(input, true, 20);
     }
 
-    /// <summary>NAudio は共有モード用の自動変換フラグを排他モードでも付けてしまい E_INVALIDARG になるので外す。</summary>
     private sealed class RawWasapiCapture : WasapiCapture
     {
         public RawWasapiCapture(MMDevice device, bool useEventSync, int bufferMs) : base(device, useEventSync, bufferMs) { }
@@ -196,7 +186,7 @@ public sealed class AudioEngine : IDisposable
 
     private void OnRecordingStopped(object? sender, StoppedEventArgs e)
     {
-        if (_capture == null) return; // 自分で止めたとき
+        if (_capture == null) return;
         var ex = e.Exception;
         Stop();
         Stopped?.Invoke(ex);

@@ -2,17 +2,15 @@ using System.Runtime.InteropServices;
 
 namespace VRCGuiter.VirtualMic;
 
-/// <summary>オーディオエンドポイントの表示名を書き換える（管理者権限が必要）。</summary>
 public static class EndpointRenamer
 {
     private static readonly Guid DeviceFmtid = new("a45c254e-df1c-4efd-8020-67d146a850e0");
-    private const int PidDeviceDesc = 2;      // PKEY_Device_DeviceDesc。完全名「{名前} (アダプタ名)」は Windows がこれから組み立てる
+    private const int PidDeviceDesc = 2;
     private const int StgmReadWrite = 2;
     private const ushort VtLpwstr = 31;
 
     public static void Rename(string endpointId, string shortName)
     {
-        // NAudio 内部の同 GUID の COM クラスと型が衝突するので、CLSID から直接生成する
         var enumerator = (IMMDeviceEnumerator)Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("BCDE0395-E52F-467C-8E3D-C4579291692E"), true)!)!;
         Check(enumerator.GetDevice(endpointId, out IMMDevice device));
         Check(device.OpenPropertyStore(StgmReadWrite, out IPropertyStore store));

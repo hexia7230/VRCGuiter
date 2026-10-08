@@ -4,7 +4,6 @@ using NAudio.CoreAudioApi;
 
 namespace VRCGuiter.VirtualMic;
 
-/// <summary>管理者権限で動く側。VB-CABLE インストール（必要なら）と VRCG への改名。</summary>
 public static class SetupHelper
 {
     public static int RunElevated(string installerDir, string logPath)
@@ -45,7 +44,6 @@ public static class SetupHelper
                 if (!p.WaitForExit((int)TimeSpan.FromMinutes(15).TotalMilliseconds)) { log.AppendLine("インストーラーがタイムアウト"); return 3; }
                 log.AppendLine("インストーラー終了コード: " + p.ExitCode);
             }
-            // デバイスが現れるまで待つ
             var deadline = DateTime.UtcNow.AddSeconds(45);
             while (cable == null && DateTime.UtcNow < deadline)
             {

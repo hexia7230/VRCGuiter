@@ -7,11 +7,9 @@ static class Program
     [STAThread]
     static int Main(string[] args)
     {
-        // 管理者権限で起動されるヘルパーモード（VB-CABLE 導入 + VRCG への改名）
         if (args.Length >= 3 && args[0] == "--setup")
             return VirtualMic.SetupHelper.RunElevated(args[1], args[2]);
 
-        // 開発用セルフテスト（ログファイルに結果を書く）
         if (args.Length >= 2 && args[0] == "--selftest")
             return Diagnostics.SelfTest.Run(args[1]);
 

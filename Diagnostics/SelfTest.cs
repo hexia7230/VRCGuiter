@@ -7,7 +7,6 @@ using VRCGuiter.VirtualMic;
 
 namespace VRCGuiter.Diagnostics;
 
-/// <summary>開発用: VRCGuiter.exe --selftest ログファイル で実行。DSP と実デバイスの疎通を確認する。</summary>
 public static class SelfTest
 {
     private const int Sr = 48000;
@@ -48,15 +47,12 @@ public static class SelfTest
         return failures == 0 ? 0 : 1;
     }
 
-    // ------------------------------------------------------------------ DSP
-
     private static void TestDsp(Action<string> log, Action<bool, string> check)
     {
         log("--- dsp ---");
         var rnd = new Random(12345);
-        float Noise() => (float)(rnd.NextDouble() * 2 - 1) * 0.0173f; // RMS ≈ 0.01 (-40 dBFS)
+        float Noise() => (float)(rnd.NextDouble() * 2 - 1) * 0.0173f;
 
-        // ノイズ除去: 学習 → 同じ種類のノイズがどれだけ減るか
         var nr = new SpectralNoiseReducer { Strength = 0.6f };
         nr.StartLearning(2 * Sr / SpectralNoiseReducer.Hop);
         var blk = new float[480];
@@ -68,14 +64,13 @@ public static class SelfTest
             for (int i = 0; i < 480; i++) blk[i] = Noise();
             double s = 0; for (int i = 0; i < 480; i++) s += blk[i] * blk[i];
             nr.Process(blk, 480);
-            if (b < 30) continue; // 立ち上がりは除外
+            if (b < 30) continue;
             inSq += s; for (int i = 0; i < 480; i++) outSq += blk[i] * blk[i]; cnt += 480;
         }
         double reduction = 10 * Math.Log10(inSq / Math.Max(outSq, 1e-20));
         log($"noise reduction (stationary noise, strength 60%): {reduction:0.0} dB");
         check(reduction >= 12, "noise reduced by >= 12 dB");
 
-        // トーン（楽器音の代わり）が残るか: 440Hz -20dBFS + ノイズ
         double inTone = 0, outTone = 0; int toneBlocks = 0;
         double ph = 0;
         var inBlk = new float[480];
@@ -92,7 +87,6 @@ public static class SelfTest
         log($"tone retention at 440Hz: {toneDiff:+0.00;-0.00} dB ({toneBlocks} blocks)");
         check(Math.Abs(toneDiff) <= 1.5, "tone kept within 1.5 dB");
 
-        // ゲート
         var gate = new NoiseGate { ThresholdDb = -60 };
         gate.Configure(Sr);
         float last = 1;
@@ -101,7 +95,6 @@ public static class SelfTest
         for (int b = 0; b < 20; b++) { for (int i = 0; i < 480; i++) blk[i] = 0.1f * (float)Math.Sin(i * 0.1); gate.Process(blk, 480); }
         check(Math.Abs(blk[200]) > 0.05f, "gate opens on -20 dB signal");
 
-        // リバーブ: インパルスに尾がつき、減衰する
         var rev = new Freeverb { Wet = 0.3f, Room = 0.55f, Damp = 0.5f, PreDelayMs = 20 };
         rev.Configure(Sr);
         double e100 = 0, e1500 = 0, e3000 = 0; bool nan = false;
@@ -116,13 +109,11 @@ public static class SelfTest
         log($"reverb tail energy: 100ms={e100:E2} 1500ms={e1500:E2} 3000ms={e3000:E2}");
         check(!nan && e100 > 1e-6 && e1500 < e100 && e3000 < e1500, "reverb tail present and decaying");
 
-        // リミッター
         var lim = new PeakLimiter(); lim.Configure(Sr);
         float mx = 0;
         for (int b = 0; b < 20; b++) { for (int i = 0; i < 480; i++) blk[i] = 3f * (float)Math.Sin(i * 0.2); lim.Process(blk, 480); for (int i = 0; i < 480; i++) mx = Math.Max(mx, Math.Abs(blk[i])); }
         check(mx <= 1.0f && mx >= 0.9f, $"limiter keeps peak <= 1.0 (max {mx:0.000})");
 
-        // ハイパス
         var hp = Biquad.HighPass(Sr, 50);
         double lo = 0, hi = 0;
         for (int b = 0; b < 50; b++) { for (int i = 0; i < 480; i++) blk[i] = (float)Math.Sin(2 * Math.PI * 20 * (b * 480 + i) / Sr); hp.Process(blk, 480); if (b > 25) for (int i = 0; i < 480; i++) lo += blk[i] * blk[i]; }
@@ -131,7 +122,6 @@ public static class SelfTest
         log($"highpass: 20Hz {10 * Math.Log10(lo / (24 * 480 * 0.5)):0.0} dB, 1kHz {10 * Math.Log10(hi / (24 * 480 * 0.5)):0.0} dB");
         check(lo < hi * 0.1, "highpass attenuates 20 Hz by > 10 dB");
 
-        // サンプル変換
         var wf16 = new WaveFormat(48000, 16, 2);
         var bytes = new byte[8];
         BitConverter.GetBytes((short)16384).CopyTo(bytes, 0); BitConverter.GetBytes((short)-16384).CopyTo(bytes, 2);
@@ -148,8 +138,6 @@ public static class SelfTest
         public void Add(float[] x, int n) { for (int i = 0; i < n; i++) { double s = x[i] + _coeff * _s1 - _s2; _s2 = _s1; _s1 = s; } _n += n; }
         public double Power() => (_s1 * _s1 + _s2 * _s2 - _coeff * _s1 * _s2) / _n;
     }
-
-    // ------------------------------------------------------------------ 実デバイス
 
     private static void TestLoopback(CablePair c, Action<string> log, Action<bool, string> check)
     {

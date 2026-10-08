@@ -1,6 +1,5 @@
 namespace VRCGuiter.Audio.Dsp;
 
-/// <summary>音割れ防止の簡易ピークリミッター。</summary>
 public sealed class PeakLimiter
 {
     public float Ceiling = 0.95f;
